@@ -279,15 +279,17 @@ class Anchor(Relocatable):
         super(Anchor, self).__init__(pos)
 
 class GlobalLabel(Relocatable):
-    def __init__(self, pos, text, shape = 'Input'):
+    def __init__(self, pos, text, shape = 'Input', orientation = 0):
         super(GlobalLabel, self).__init__(pos)
         self.text = text
         self.shape = shape
+        self.orient = orientation
 
     def ToString(self):
         pos = self.SheetPosition()
-        return "Text GLabel %s %s 0 50 %s ~ 0\n%s\n" % (pos[0], pos[1],
-                                                        self.shape, self.text)
+        return "Text GLabel %s %s %s 50 %s ~ 0\n%s\n" % (pos[0], pos[1],
+                                                         self.orient,
+                                                         self.shape, self.text)
 class Label(Relocatable):
     def __init__(self, pos, text):
         super(Label, self).__init__(pos)
