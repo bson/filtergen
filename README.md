@@ -82,7 +82,7 @@ Feel free to cut it up and rearrange as needed, adding or renaming
 labels as desired.
 
 Note that when a schematic is appended in KiCAD all reference IDs are
-deleted, for this reason the filters are generated unannotated.  It
+reset, for this reason the filters are generated unannotated.  It
 would just be confusing not to.  When stages are printed during
 generation the components are named according to this reference stage:
 
