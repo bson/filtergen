@@ -69,6 +69,11 @@ Wrote schematic to /Users/bson/Desktop/filter.sch
 $
 ```
 
+The N parameter is the cascade length, NOT the filter order.  Each
+stage is always second order, hence the filter order is always twice
+that of N supplied.  It doesn't generate odd-order filters.  It also
+doesn't know how to add passive stages as of now.
+
 The filter generated can be added to KiCAD via File -> Append
 Schematic Sheet...; the schematic has a token A4 page, with the filter
 below it.  It's placed outside the page to make it easy to move it in
