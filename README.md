@@ -3,7 +3,7 @@
 This is a fairly simple filter generator that not only calculates
 cascades but can also output KiCAD schematics.  I created this because
 capturing and then populating components values in a schematic is
-rather error prone.
+rather tedious - and error prone.
 
 It currently only knows of Multiple-Feedback (MFB) low-pass filters.
 These are sometimes referred to as Rauch filters in the literature.
@@ -77,7 +77,7 @@ this is just a placeholder and is intended to be edited to suit.
 
 ![alt text](doc/sample_cascade.png "Sample KiCAD Schematic")
 
-If you don't wan the stage boxes or text notes, just remove them.
+If you don't want the stage boxes (line notes) or text notes, just remove them.
 Feel free to cut it up and rearrange as needed, adding or renaming
 labels as desired.
 
@@ -92,6 +92,11 @@ The command line argument R1 is the value of R1 in the circuit above.
 The resistors set the gain, so you can pick anything suitable for
 this.  If in doubt, 1k is a fine value.  If the other resistors start
 getting small, by all means step up to something bigger.
+
+The code is mostly reasonably well factored, but some of it is overly
+naive.  The offseting and relocation of subcircuits needs work.  It works
+by building a tree representing the circuit and then outputting it as
+a .SCH file.
 
 # Note
 
