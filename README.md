@@ -17,7 +17,7 @@ It can generate cascaded stages for Bessel and Butterworth filters.
 It's run from the command line, and without any arguments produces a
 usage message.
 ```
- python ./rauch.py
+$ python ./rauch.py
 usage:
   rauch.py butterworth f0 H0 N R1 [filename]
      N-stage Rauch/MFB low-pass filter calculator with Butterworth response.
