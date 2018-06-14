@@ -2,14 +2,17 @@
 
 import mpmath as mp
 
-from siutils import SUFFIXES, si_val, sisuffix
+from siutils import SUFFIXES, si_val, sisuffix, nsigdig
 from kicad.schema import *
+import pole
 
-class RauchLPF(Relocatable):
+NQDIGITS=6
+
+class Lowpass(Relocatable):
     '''Single low pass filter stage'''
 
     def __init__(self, pos, f, H0, Q, R1, annot, box = False):
-        super(RauchLPF, self).__init__(pos)
+        super(Lowpass, self).__init__(pos)
 
         self.annot = annot
         self.box   = box
@@ -39,11 +42,11 @@ class RauchLPF(Relocatable):
 
     def Print(self, ident):
         print "Rauch LPF Stage (%s)" % ident
-        print "R1: %sohm" % self.R1
-        print "R2: %sohm" % self.R2
-        print "R3: %sohm" % self.R3
-        print "C1: %s" % self.C1
-        print "C2: %s" % self.C2
+        print "  R1: %sohm" % self.R1
+        print "  R2: %sohm" % self.R2
+        print "  R3: %sohm" % self.R3
+        print "  C1: %s" % self.C1
+        print "  C2: %s" % self.C2
         
     def Build(self):
         '''Build a filter stage subcircuit.'''
@@ -134,6 +137,68 @@ class RauchLPF(Relocatable):
         return self.circuit.ToString()
 
 
+class Cascade(Relocatable):
+    def __init__(self, pos, f, H0, n, R1, q_enumerator):
+        super(Cascade, self).__init__(pos)
+
+        self.input = None
+        self.output = None
+
+        self.circuit = SubCircuit((0,0))
+
+        Qlist  = q_enumerator(n)
+        prev   = None
+        xpos   = 0
+        outpos = (-150, 1000)
+        inpos  = (650, 1000)
+
+        i = 1
+        for Q in Qlist:
+            stage = Lowpass((xpos, 0), f, H0, Q, R1,
+                            "MFB LPF Stage %d: H=%s, Q=%s, f0=%s" % (
+                                i, H0, nsigdig(Q, NQDIGITS), "%sHz" % sisuffix(f)), True)
+            self.circuit.Add(stage)
+
+            if prev is None:
+                self.input = stage.GetInput()
+            else:
+                self.circuit.Add(Wire(outpos, inpos))
+                print
+
+            stage.Print("#%s, Q=%s" % (i, nsigdig(Q, NQDIGITS)))
+            prev   = stage
+            xpos  += 3200
+            outpos = addpos(outpos, (3200, 0))
+            inpos  = addpos(inpos, (3200, 0))
+
+            i += 1
+
+        self.output  = prev.GetOutput()
+        
+    def GetPin1Pos(self):
+        return self.input.GetPin1Pos()
+
+    def GetPin2Pos(self):
+        return self.output.GetPin2Pos()
+
+    def GetInput(self):
+        return self.input
+
+    def GetOutput(self):
+        return self.output
+
+    def ToString(self):
+        self.circuit.SetOrigin(self.SheetPosition())
+        return self.circuit.ToString()
+
+
+class ButterworthCascade(Cascade):
+    '''A lowpass filter cascasde with flat passpand response.'''
+
+    def __init__(self, pos, f, H0, n, R1):
+        super(ButterworthCascade, self).__init__(pos, f, H0, n, R1, pole.butterworth)
+
+        
 if __name__ == "__main__":
     import sys, os, string
 
@@ -141,51 +206,83 @@ if __name__ == "__main__":
         progname = os.path.split(sys.argv[0])[-1]
 
         print "usage:"
+        print "  %s butterworth f0 H0 N R1 [filename]" % progname
+        print "     N-stage Rauch/MFB low-pass filter calculator."
+        print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
+        print "     gain H0.  R1 is used to scale resistors, with 1k being a good"
+        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
+        print
         print "  %s stage f0 H0 Q R1 [filename]" % progname
         print "     Single-stage Rauch/MFB low-pass filter calculator."
         print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
-        print "     gain H0, and a given Q.  R1 can optionally be specified but will be"
-        print "     set to 1kohm if omitted.  If supplied, a KiCAD schmatic is output to"
-        print "     'filename'."
+        print "     gain H0, and a given Q.  R1 is used to scale resistors, with 1k a good"
+        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
         print
         print "SI suffixes:", string.join(SUFFIXES, " ")
         exit(1)
 
-    def do_stage(args):
-        '''Generate filter stage.'''
+    def add_in_out(schema, filter, n):
+            Vin = GlobalLabel((2100, 3000), "VIN", "Input")
 
-        f, H0, Q, R1 = map(si_val, args[:4])
+            outpos = addpos((550, 0), filter.GetPin2Pos())
+            outpos = addpos(outpos, filter.Position())
+            n = int(n)
+            if n >= 1:
+                outpos = addpos(outpos, ((n-1)*3200, 0))
 
+            Vout = GlobalLabel(outpos, "VOUT", "Output", 2)
+
+            pinpos = addpos(outpos, (-550, 0))
+
+            schema.Add(Vin, Vout,
+                       Wire(Vin.GetPin2Pos(), addpos(filter.GetPin1Pos(), filter.Position())),
+                       Wire(pinpos, Vout.GetPin1Pos()))
+        
+    def do_common(func, args):
         filename = None
         if len(args) > 4:
             filename = args[4]
 
-        stage = RauchLPF((2000, 2000), f, H0, Q, R1,
-                         "Low-pass filter: H=%s, Q=%s, f0=%s" % (H0, Q, f), True)
-
-        stage.Print("Q=%s" % Q)
-
+        circuit, n = func(args)
+        
         if not filename is None:
             schema = Schematic("A4")
-            schema.Add(stage)
+            schema.Add(circuit)
 
-            Vin = GlobalLabel((2100, 3000), "VIN", "Input")
-            Vout = GlobalLabel((5600, 3000), "VOUT", "Output", 2)
-
-            schema.Add(Vin, Vout,
-                       Wire(Vin.GetPin2Pos(), addpos(stage.GetPin1Pos(), stage.Position())),
-                       Wire(addpos(stage.GetPin2Pos(), stage.Position()), Vout.GetPin1Pos()))
+            add_in_out(schema, circuit, n)
 
             with open(filename, "w") as file:
                 file.write(schema.ToString())
-                print "Wrote schematic to %s" % filename
+                print "\nWrote schematic to %s" % filename
+
+
+    def do_stage(args):
+        f, H0, Q, R1 = map(si_val, args[:4])
+
+        stage = Lowpass((2000, 2000), f, H0, Q, R1,
+                        "MFB LPF: H=%s, Q=%s, f0=%s" % (H0, nsigdig(Q, NQIGITS), f),
+                        True)
+
+        stage.Print("Q=%s" % nsigdig(Q, NQDIGITS))
+        return stage, 1
         
 
-    if len(sys.argv) < 2:
-        usage()
+    def do_butterworth(args):
+        f, H0, N, R1 = map(si_val, args[:4])
+
+        if N > 32:
+            print "N is too big; you probably didn't mean to do this"
+            exit(1)
+
+        return ButterworthCascade((2000, 2000), f, H0, N, R1), N
+        
 
     what = sys.argv[1]
     if what == "stage" and len(sys.argv) >= 6:
-        do_stage(sys.argv[2:])
+        func = do_stage
+    elif what == "butterworth" and len(sys.argv) >= 6:
+        func = do_butterworth
     else:
         usage()
+
+    do_common(func, sys.argv[2:])
