@@ -234,9 +234,14 @@ if __name__ == "__main__":
 
             pinpos = addpos(outpos, (-550, 0))
 
-            schema.Add(Vin, Vout,
+            hookups = SubCircuit((0,0))
+            hookups.Add(Vin, Vout,
                        Wire(Vin.GetPin2Pos(), addpos(filter.GetPin1Pos(), filter.Position())),
                        Wire(pinpos, Vout.GetPin1Pos()))
+            hookups.SetOrigin(filter.GetOrigin())
+            schema.Add(hookups);
+
+
         
     def do_common(func, args):
         filename = None
@@ -248,6 +253,11 @@ if __name__ == "__main__":
         if not filename is None:
             schema = Schematic("A4")
             schema.Add(circuit)
+
+            height = schema.GetSize()[1]
+            height = height - (height % 100) # Snap to mil grid
+
+            circuit.SetOrigin((-2500, height - 2000))
 
             add_in_out(schema, circuit, n)
 

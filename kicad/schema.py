@@ -28,7 +28,10 @@ class Relocatable(object):
         return self.Relocate(self.pos)
 
     def SetOrigin(self, pos):
-        self.origin = pos    
+        self.origin = pos
+
+    def GetOrigin(self):
+        return self.origin
 
     def Relocate(self, pos):
         return (self.origin[0] + pos[0], self.origin[1] + pos[1])
@@ -337,6 +340,9 @@ class Schematic(object):
             self.size = flip(self.size)
 
         self.items = [ ]
+
+    def GetSize(self):
+        return self.size
 
     def Add(self, *args):
         self.items.extend(args)
