@@ -7,6 +7,7 @@ from kicad.schema import *
 import pole
 
 NQDIGITS=6
+NHDIGITS=4
 
 class Lowpass(Relocatable):
     '''Single low pass filter stage'''
@@ -138,7 +139,7 @@ class Lowpass(Relocatable):
 
 
 class Cascade(Relocatable):
-    def __init__(self, pos, f, H0, n, R1, q_enumerator):
+    def __init__(self, pos, f, H0, n, R1, q_enumerator, kind):
         super(Cascade, self).__init__(pos)
 
         self.input = None
@@ -146,17 +147,28 @@ class Cascade(Relocatable):
 
         self.circuit = SubCircuit((0,0))
 
-        Qlist  = q_enumerator(n)
+        self.circuit.Add(Text((300, 2100), "%s Multiple-Feedback Low-Pass Filter\\nGain=%s, f=%sHz" % (
+            kind, H0, sisuffix(f))))
+
+        Qlist, flist  = q_enumerator(n)
         prev   = None
         xpos   = 0
         outpos = (-150, 1000)
         inpos  = (650, 1000)
 
+        H = mp.root(H0, n)
+
         i = 1
         for Q in Qlist:
-            stage = Lowpass((xpos, 0), f, H0, Q, R1,
-                            "MFB LPF Stage %d: H=%s, Q=%s, f0=%s" % (
-                                i, H0, nsigdig(Q, NQDIGITS), "%sHz" % sisuffix(f)), True)
+            f_stage = f * flist[i-1]
+            stage = Lowpass((xpos, 0), f_stage, H, Q, R1,
+                            "MFB LPF Stage %d [H=%s, Q=%s, f0=%s %s]" % (
+                                i,
+                                nsigdig(H, NHDIGITS),
+                                nsigdig(Q, NQDIGITS),
+                                "%sHz" % sisuffix(f_stage),
+                                kind),
+                            True)
             self.circuit.Add(stage)
 
             if prev is None:
@@ -193,10 +205,18 @@ class Cascade(Relocatable):
 
 
 class ButterworthCascade(Cascade):
-    '''A lowpass filter cascasde with flat passpand response.'''
+    '''A lowpass filter cascasde with flat passpand frequency response.'''
 
     def __init__(self, pos, f, H0, n, R1):
-        super(ButterworthCascade, self).__init__(pos, f, H0, n, R1, pole.butterworth)
+        super(ButterworthCascade, self).__init__(pos, f, H0, n, R1, pole.butterworth,
+                                                 "Butterworth")
+
+
+class BesselCascade(Cascade):
+    '''A lowpass filter cascasde with flat passpand phase response.'''
+
+    def __init__(self, pos, f, H0, n, R1):
+        super(BesselCascade, self).__init__(pos, f, H0, n, R1, pole.bessel, "Bessel")
 
         
 if __name__ == "__main__":
@@ -207,7 +227,13 @@ if __name__ == "__main__":
 
         print "usage:"
         print "  %s butterworth f0 H0 N R1 [filename]" % progname
-        print "     N-stage Rauch/MFB low-pass filter calculator."
+        print "     N-stage Rauch/MFB low-pass filter calculator with Butterworth response."
+        print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
+        print "     gain H0.  R1 is used to scale resistors, with 1k being a good"
+        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
+        print
+        print "  %s bessel f0 H0 N R1 [filename]" % progname
+        print "     N-stage Rauch/MFB low-pass filter calculator with Bessel response."
         print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
         print "     gain H0.  R1 is used to scale resistors, with 1k being a good"
         print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
@@ -287,11 +313,23 @@ if __name__ == "__main__":
         return ButterworthCascade((2000, 2000), f, H0, N, R1), N
         
 
+    def do_bessel(args):
+        f, H0, N, R1 = map(si_val, args[:4])
+
+        if N > 32:
+            print "N is too big; you probably didn't mean to do this"
+            exit(1)
+
+        return BesselCascade((2000, 2000), f, H0, N, R1), N
+        
+
     what = sys.argv[1]
     if what == "stage" and len(sys.argv) >= 6:
         func = do_stage
     elif what == "butterworth" and len(sys.argv) >= 6:
         func = do_butterworth
+    elif what == "bessel" and len(sys.argv) >= 6:
+        func = do_bessel
     else:
         usage()
 
