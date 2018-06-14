@@ -162,12 +162,11 @@ class Cascade(Relocatable):
         for Q in Qlist:
             f_stage = f * flist[i-1]
             stage = Lowpass((xpos, 0), f_stage, H, Q, R1,
-                            "MFB LPF Stage %d [H=%s, Q=%s, f0=%s %s]" % (
+                            "MFB LPF Stage %d [H=%s, Q=%s, f0=%s]" % (
                                 i,
                                 nsigdig(H, NHDIGITS),
                                 nsigdig(Q, NQDIGITS),
-                                "%sHz" % sisuffix(f_stage),
-                                kind),
+                                "%sHz" % sisuffix(f_stage)),
                             True)
             self.circuit.Add(stage)
 
@@ -322,6 +321,9 @@ if __name__ == "__main__":
 
         return BesselCascade((2000, 2000), f, H0, N, R1), N
         
+
+    if len(sys.argv) < 2:
+        usage()
 
     what = sys.argv[1]
     if what == "stage" and len(sys.argv) >= 6:
