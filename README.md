@@ -84,7 +84,7 @@ labels as desired.
 Note that when a schematic is appended in KiCAD all reference IDs are
 deleted, for this reason the filters are generated unannotated.  It
 would just be confusing not to.  When stages are printed during
-generation the components are according to this reference stage:
+generation the components are named according to this reference stage:
 
 ![alt text](doc/refstage.png "Reference Schematic for Component Values")
 
