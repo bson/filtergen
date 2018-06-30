@@ -5,6 +5,9 @@ cascades but can also output KiCAD schematics.  I created this because
 capturing and then populating components values in a schematic is
 rather tedious - and error prone.
 
+The schematic files probably require KiCAD v5, but it's possible they
+will also load into v4.
+
 It currently only knows of Multiple-Feedback (MFB) low-pass filters.
 These are sometimes referred to as Rauch filters in the literature.
 
@@ -19,23 +22,25 @@ usage message.
 ```
 $ python ./rauch.py
 usage:
-  rauch.py butterworth f0 H0 N R1 [filename]
+  rauch.py [sim] butterworth f0 H0 N R1 [filename]
      N-stage Rauch/MFB low-pass filter calculator with Butterworth response.
      Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
      gain H0.  R1 is used to scale resistors, with 1k being a good
      starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
 
-  rauch.py bessel f0 H0 N R1 [filename]
+  rauch.py [sim] bessel f0 H0 N R1 [filename]
      N-stage Rauch/MFB low-pass filter calculator with Bessel response.
      Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
      gain H0.  R1 is used to scale resistors, with 1k being a good
      starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
 
-  rauch.py stage f0 H0 Q R1 [filename]
+  rauch.py [sim] stage f0 H0 Q R1 [filename]
      Single-stage Rauch/MFB low-pass filter calculator.
      Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
      gain H0, and a given Q.  R1 is used to scale resistors, with 1k a good
      starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
+
+Adding a 'sim' argument outputs a KiCAD simulation schematic.
 
 SI suffixes: M k  m u n p
 ```
@@ -103,7 +108,35 @@ naive.  The offseting and relocation of subcircuits needs work.  It works
 by building a tree representing the circuit and then outputting it as
 a .SCH file.
 
-# Note
+# Simulation
+
+Adding the keyword parameter "sim" makes the script output a .SCH file
+with KiCAD v5 ngspice simulation fixings.  The op amps will use an ideal
+model (1M gain, no poles or anything else, just flat response to infinity),
+an input source, and a .ac analysis directive.  It also adds some other
+token components such as source and load resistors and rail voltage sources.
+The trivial opamp model doesn't use the rail voltages, but they're handy if
+you want to use a different model.  For simulation LM321 pinout is used,
+which is a common single op amp.  It also identifies the opamps as X? since
+this is what ngspice expects for a subckt model.
+
+To use it:
+1. Create an empty KiCAD project and close it
+2. Output a filter .sch file into the project
+3. Open the project
+4. Open the schematic
+5. Run ngspice: ```Tools -> Simulator```
+6. Press the run button
+7. Press the "Add Signals" button and add V(VOUT)
+
+This is a first stab at it, and higher orders than 4 (more than two stages)
+will push off the sheet.
+
+The main purpose is to find reasonable E series component values.
+I'll add a Monte Carlo analysis out of the box at some point.  This would
+be made easier if KiCAD could pick up plot instructions from the schematic.
+
+# Notes
 
 The grid positions are snapped to 100mil.  This means if you use a
 metric grid size you may run into alignment problems.  KiCAD
