@@ -3,6 +3,7 @@ import mpmath as mp
 def butterworth(n):
     '''Returns a list of Q,f multiplier values for a cascade of length N.'''
 
+    n = int(n)
     step = mp.pi/(2.0*n)
     start = step/2.0
 
@@ -47,4 +48,5 @@ def bessel(n):
         print "Max cascade length for Bessel filters is 8"
         exit(1)
 
-    return BESSEL_Q[n-1], BESSEL_F[n-1]
+    # Return with smallest Q in the first stage
+    return BESSEL_Q[n-1][::-1], BESSEL_F[n-1][::-1]

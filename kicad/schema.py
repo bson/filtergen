@@ -16,6 +16,13 @@ VERTICAL   = [1, 0, 0, -1]
 VERTICAL_FLIP = [-1, 0, 0, 1]
 FLAG_HIDDEN = 3
 
+FIELD_SPICE_PRIMITIVE = 4
+FIELD_SPICE_MODEL = 5
+FIELD_SPICE_NETLIST = 6
+FIELD_SPICE_LIBFILE = 7
+FIELD_SPICE_NODES = 8
+
+
 class Relocatable(object):
     def __init__(self, pos):
         self.pos    = pos
@@ -69,7 +76,8 @@ class Component(Relocatable):
                  'flags': [0,0,0,0],
                  'size': 50,
                  'align': 'C',
-                 'style': 'CNN' }
+                 'style': 'CNN',
+                 'name': None }
     
     def ToString(self):
         pos = self.SheetPosition()
@@ -87,18 +95,22 @@ class Component(Relocatable):
 
         for n in sorted(self.fields.keys()):
             f = self.fields[n]
-            s += "F %s \"%s\" %s %s %s %s %s %s %s\n" % (n, f['value'], f['rot'],
-                                                         f['pos'][0] + posx,
-                                                         f['pos'][1] + posy,
-                                                         f['size'],
-                                                         "%s%s%s%s" % tuple(f['flags']),
-                                                         f['align'], f['style'])
+            s += "F %s \"%s\" %s %s %s %s %s %s %s" % (n, f['value'], f['rot'],
+                                                       f['pos'][0] + posx,
+                                                       f['pos'][1] + posy,
+                                                       f['size'],
+                                                       "%s%s%s%s" % tuple(f['flags']),
+                                                       f['align'], f['style'])
+            if f['name'] is not None:
+                s += ' "' + f['name'] + '"'
+            s += "\n"
+
         s += "\t1   %s %s\n" % pos
         s += "\t%s   %s   %s   %s\n$EndComp\n" % tuple(self.orientation)
         return s
 
     def SetValue(self, value, pos = None):
-        '''If pos omitted, merely update the value string'''
+        '''Set component value.  If pos omitted, merely update the value string'''
         if pos is None:
             self.fields[FIELD_VALUE]['value'] = value
         else:
@@ -122,15 +134,24 @@ class Component(Relocatable):
     def SetDoc(self, url):
         self.fields[FIELD_DOC] = self.newField(value, self.Position(), HORIZONTAL)
 
-
+    def SetUserField(self, field, name, value):
+        '''Sets a user field's name and value'''
+        self.fields[field] = self.newField(value, self.Position(), VERTICAL)
+        self.fields[field]['name'] = name
+        self.SetFlag(field, FLAG_HIDDEN, '1')
+        
 class Passive(Component):
     SIZE = 100
 
-    def __init__(self, ref, comp, value, pos, orientation):
+    def __init__(self, ref, comp, value, pos, orientation, spice_prim):
         super(Passive, self).__init__(ref, comp, pos, orientation)
         self.SetValue(value,
                       (self.orientation[0] * 100,
                        self.orientation[1] * 100))
+
+        self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", spice_prim)
+        self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+
                       
     def GetPin1Pos(self):
         posx, posy = self.Position()
@@ -161,35 +182,44 @@ class Passive(Component):
 
 class Resistor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Resistor, self).__init__("R?", "device:R_Small", value, pos, orientation)
+        super(Resistor, self).__init__("R?", "device:R_Small", value, pos, orientation, "R")
         self.PlaceRefValue(30)
 
 class Capacitor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Capacitor, self).__init__("C?", "device:C_Small", value, pos, orientation)
+        super(Capacitor, self).__init__("C?", "device:C_Small", value, pos, orientation,
+                                        "C")
         self.PlaceRefValue(60)
 
 class Inductor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Inductor, self).__init__("L?", "device:L_Small", value, pos, orientation)
+        super(Inductor, self).__init__("L?", "device:L_Small", value, pos, orientation, "L")
         self.PlaceRefValue(0)
 
 class LED(Passive):
     def __init__(self, value, pos, orientation):
-        super(LED, self).__init__("D?", "device:LED_Small", value, pos, orientation)
+        super(LED, self).__init__("D?", "device:LED_Small", value, pos, orientation, "D")
         self.PlaceRefValue(50)
 
 class Diode(Passive):
     def __init__(self, value, pos, orientation):
-        super(Diode, self).__init__("D?", "device:D_Small", value, pos, orientation)
+        super(Diode, self).__init__("D?", "device:D_Small", value, pos, orientation, "D")
         self.PlaceRefValue(50)
 
 class OpAmp(Component):
     '''Pin1 is the negative input, Pin2 is the output.  GetInP() returns an Anchor for In+.'''
-    def __init__(self, comp, pos, orientation):
-        super(OpAmp, self).__init__("U?", "linear:" + comp, pos, orientation)
-        self.SetValue(comp, (75, 200))
+    def __init__(self, comp, pos, orientation, sim):
+        if sim:
+            super(OpAmp, self).__init__("X?", "linear:LM321", pos, orientation)
+        else:
+            super(OpAmp, self).__init__("U?", "linear:" + comp, pos, orientation)
 
+        self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "X")
+        self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", comp)
+        self.SetUserField(FIELD_SPICE_NODES, "Spice_Node_Sequence", "1 3 5 2 4")
+        self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+        self.SetValue(comp, (75, 200))
+    
     def GetInP(self):
         return Anchor(self.Position((-300, -100)))
 
@@ -222,7 +252,35 @@ class Supply(Power):
         self.SetValue(node, (0, 150))
         self.SetFlag(FIELD_REF, FLAG_HIDDEN, '1')
 
-        
+class VSource(Component):
+    '''A voltage source, mainly for simulation purposes.'''
+
+    def __init__(self, pos, value, sim_value):
+        '''Value is the displayed value; sim_value is the spice config'''
+
+        super(VSource, self).__init__("V?", "pspice:VSOURCE", pos, VERTICAL)
+        self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "V")
+        self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", sim_value)
+        self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+        self.SetValue(value, (75, 200))
+
+        self.PlaceField(FIELD_REF, (250, 50))
+        self.PlaceField(FIELD_VALUE, (250, -50))
+        self.PlaceField(FIELD_SPICE_MODEL, (250, -150))
+        self.SetStyle(FIELD_REF, 'CNN')
+        self.SetStyle(FIELD_VALUE, 'CNN')
+        self.SetStyle(FIELD_SPICE_MODEL, 'CNN')
+        self.SetAlign(FIELD_REF, 'L')
+        self.SetAlign(FIELD_VALUE, 'L')
+        self.SetAlign(FIELD_SPICE_MODEL, 'L')
+
+    def GetPin1Pos(self):
+        return self.Position((0, 300))
+
+    def GetPin2Pos(self):
+        return self.Position((0, -300))
+
+
 class Wire(Relocatable):
     def __init__(self, start, end, kind = 'Wire'):
         super(Wire, self).__init__(start)
