@@ -22,25 +22,18 @@ usage message.
 ```
 $ python ./rauch.py
 usage:
-  rauch.py [sim] butterworth f0 H0 N R1 [filename]
-     N-stage Rauch/MFB low-pass filter calculator with Butterworth response.
-     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
-     gain H0.  R1 is used to scale resistors, with 1k being a good
-     starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
-
-  rauch.py [sim] bessel f0 H0 N R1 [filename]
-     N-stage Rauch/MFB low-pass filter calculator with Bessel response.
-     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
-     gain H0.  R1 is used to scale resistors, with 1k being a good
-     starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
-
   rauch.py [sim] stage f0 H0 Q R1 [filename]
-     Single-stage Rauch/MFB low-pass filter calculator.
-     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,
-     gain H0, and a given Q.  R1 is used to scale resistors, with 1k a good
-     starting point.  If supplied, a KiCAD schmatic is output to 'filename'.
+  rauch.py [sim] butterworth f0 H0 N R1 [filename]
+  rauch.py [sim] bessel f0 H0 N R1 [filename]
 
-Adding a 'sim' argument outputs a KiCAD simulation schematic.
+     Generates either a single stage or an N-stage Rauch/MFB low-pass filter
+     with a specific response.  Calculates component values for a cut-off
+     frequency (-3dB) of f0 Hz, gain H0.
+     R1 is used to scale resistors, with 1k being a good starting point.
+     If supplied, a KiCAD schmatic is output to 'filename'.
+
+     Adding an initial 'sim' argument outputs a KiCAD schematic suitable
+     for simulation with KiCAD's built-in ngspice support.
 
 SI suffixes: M k  m u n p
 ```
