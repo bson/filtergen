@@ -5,6 +5,9 @@ cascades but can also output KiCAD schematics.  I created this because
 capturing and then populating components values in a schematic is
 rather tedious - and error prone.
 
+The schematic files probably require KiCAD v5, but it's possible they
+will also load into v4.
+
 It currently only knows of Multiple-Feedback (MFB) low-pass filters.
 These are sometimes referred to as Rauch filters in the literature.
 
