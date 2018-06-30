@@ -232,25 +232,18 @@ if __name__ == "__main__":
         progname = os.path.split(sys.argv[0])[-1]
 
         print "usage:"
-        print "  %s [sim] butterworth f0 H0 N R1 [filename]" % progname
-        print "     N-stage Rauch/MFB low-pass filter calculator with Butterworth response."
-        print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
-        print "     gain H0.  R1 is used to scale resistors, with 1k being a good"
-        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
-        print
-        print "  %s [sim] bessel f0 H0 N R1 [filename]" % progname
-        print "     N-stage Rauch/MFB low-pass filter calculator with Bessel response."
-        print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
-        print "     gain H0.  R1 is used to scale resistors, with 1k being a good"
-        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
-        print
         print "  %s [sim] stage f0 H0 Q R1 [filename]" % progname
-        print "     Single-stage Rauch/MFB low-pass filter calculator."
-        print "     Calculates component values for a cut-off frequency (-3dB) of f0 Hz,"
-        print "     gain H0, and a given Q.  R1 is used to scale resistors, with 1k a good"
-        print "     starting point.  If supplied, a KiCAD schmatic is output to 'filename'."
+        print "  %s [sim] butterworth f0 H0 N R1 [filename]" % progname
+        print "  %s [sim] bessel f0 H0 N R1 [filename]" % progname
         print
-        print "Adding a 'sim' argument outputs a KiCAD simulation schematic."
+        print "     Generates either a single stage or an N-stage Rauch/MFB low-pass filter"
+        print "     with a specific response.  Calculates component values for a cut-off"
+        print "     frequency (-3dB) of f0 Hz, gain H0."
+        print "     R1 is used to scale resistors, with 1k being a good starting point."
+        print "     If supplied, a KiCAD schmatic is output to 'filename'."
+        print
+        print "     Adding an initial 'sim' argument outputs a KiCAD schematic suitable"
+        print "     for simulation with KiCAD's built-in ngspice support."
         print
         print "SI suffixes:", string.join(SUFFIXES, " ")
         exit(1)
