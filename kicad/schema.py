@@ -116,6 +116,12 @@ class Component(Relocatable):
         else:
             self.fields[FIELD_VALUE] = self.newField(value, pos, self.orientation)
 
+    def SetRef(self, ref):
+        if not FIELD_REF in self.fields:
+            self.fields[FIELD_REF] = self.newField(ref, self.Position(), HORIZONTAL)
+        else:
+            self.fields[FIELD_REF]['value'] = ref
+
     def SetFlag(self, field, flag, flagValue):
         self.fields[field]['flags'][flag] = flagValue
 

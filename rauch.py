@@ -269,7 +269,7 @@ if __name__ == "__main__":
             schema.Add(hookups);
 
 
-    def add_sim_stuffs(schema):
+    def add_sim_stuffs(schema, f0):
         '''Adds simulation bits: VSS, VDD supplies, a source, a 100k load, etc.'''
 
         v1      = VSource((1300, 3500), "15V", "dc 15")
@@ -288,13 +288,16 @@ if __name__ == "__main__":
                    Wire.Connect(conn1, corner1),
                    Wire.Connect(corner1, gnd1))
 
-        v3      = VSource((1300, 1700), "2Vpp AC", "dc 0 ac 1 0 sin(0 1 10k 0 0)")
+        # Set the source frequency to f0/2
+        v3      = VSource((1300, 1700), "2Vpp AC",
+                          "dc 0 ac 1 0 sin(0 1 %s 0 0)" % sisuffix(f0/2.0))
 
         # Make the spice directive ('model') show
         v3.SetFlag(FIELD_SPICE_MODEL, FLAG_HIDDEN, '0')
 
         corner5 = Corner((1300, 1250))
         rs      = Resistor("0", (1600, 1250), HORIZONTAL)
+        rs.SetRef("R100")
         vin     = GlobalLabel((1900, 1250), "VIN", "Output", 2)
         gnd2    = Ground((1300, 2200))
 
@@ -307,7 +310,8 @@ if __name__ == "__main__":
         gnd3    = Ground((1700, 2900))
         zero    = Component("#GND?", "pspice:0", (1900, 2950), VERTICAL)  # Node 0
         zero.SetFlag(FIELD_REF, FLAG_HIDDEN, "1")
-        zero.SetValue("0", zero.Position())
+        zero.SetValue("0", (0,-100))
+        zero.SetFlag(FIELD_VALUE, FLAG_HIDDEN, "0")
 
         corner2 = Corner((1700, 2800))
         corner3 = Corner((1900, 2800))
@@ -320,6 +324,7 @@ if __name__ == "__main__":
         vout    = GlobalLabel((1900, 4700), "VOUT", "Input")
         corner4 = Corner((2050, 4700))
         rl      = Resistor("100k", (2050, 4950), VERTICAL)
+        rl.SetRef("R101")
         gnd4    = Ground((2050, 5200))
 
         schema.Add(vout, corner4, rl, gnd4,
@@ -327,7 +332,10 @@ if __name__ == "__main__":
                    Wire.Connect(corner4, rl),
                    Wire.Connect(corner4, vout))
 
-        schema.Add(Text((900, 5800), '.ac dec 10 10 1meg'))
+        # Set default AC analysis to have > 1 decade of freq span past f0
+        fmax = mp.power(10.0, mp.floor(mp.log(f0, 10.0)) + 2)
+
+        schema.Add(Text((3750, 3750), '.ac dec 10 10 %s' % fmax))
 
         # Ideal op amp: gain=1e6 and nothing else: No poles, no offset
         # voltages, no bias voltages or currents, no tempco, no
@@ -344,7 +352,7 @@ if __name__ == "__main__":
         if len(args) > 4:
             filename = args[4]
 
-        circuit, n = func(sim, args)
+        circuit, n, f0 = func(sim, args)
         
         if not filename is None:
             schema = Schematic("A4")
@@ -352,7 +360,7 @@ if __name__ == "__main__":
 
             if sim:
                 circuit.SetOrigin((1400, -950))
-                add_sim_stuffs(schema)
+                add_sim_stuffs(schema, f0)
             else:
                 height = schema.GetSize()[1]
                 height = height - (height % 100) # Snap to mil grid
@@ -374,7 +382,7 @@ if __name__ == "__main__":
                         True, sim)
 
         stage.Print("Q=%s" % nsigdig(Q, NQDIGITS))
-        return stage, 1
+        return stage, 1, f
         
 
     def do_butterworth(sim, args):
@@ -384,7 +392,7 @@ if __name__ == "__main__":
             print "N is too big; you probably didn't mean to do this"
             exit(1)
 
-        return ButterworthCascade((2000, 2000), f, H0, N, R1, sim), N
+        return ButterworthCascade((2000, 2000), f, H0, N, R1, sim), N, f
         
 
     def do_bessel(si, args):
@@ -394,7 +402,7 @@ if __name__ == "__main__":
             print "N is too big; you probably didn't mean to do this"
             exit(1)
 
-        return BesselCascade((2000, 2000), f, H0, N, R1, sim), N
+        return BesselCascade((2000, 2000), f, H0, N, R1, sim), N, f
         
 
     if len(sys.argv) < 2:
