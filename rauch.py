@@ -373,7 +373,9 @@ if __name__ == "__main__":
                 file.write(schema.ToString())
                 print "\nWrote schematic to %s" % filename
 
-
+        parts = schema.PartsList()
+        print parts
+        
     def do_stage(sim, args):
         f, H0, Q, R1 = map(si_val, args[:4])
 

@@ -52,6 +52,11 @@ class Relocatable(object):
     def ToString(self):
         return ""
 
+    # For simplicity, so everything has this method instead of trying
+    # to augur its existence programmatically...
+    def PartsList(self):
+        return None
+
 
 class Component(Relocatable):
     def __init__(self, ref, comp, pos, orientation):
@@ -146,6 +151,11 @@ class Component(Relocatable):
         self.fields[field]['name'] = name
         self.SetFlag(field, FLAG_HIDDEN, '1')
         
+    def PartsList(self):
+        '''Returns a dictionary of parts or None.  Implemented by subclasses.'''
+        return None
+
+    
 class Passive(Component):
     SIZE = 100
 
@@ -157,6 +167,8 @@ class Passive(Component):
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", spice_prim)
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+        self.ref = ref
+        self.value = value
 
                       
     def GetPin1Pos(self):
@@ -184,6 +196,9 @@ class Passive(Component):
             self.SetStyle(FIELD_VALUE, 'CNN')
             self.SetAlign(FIELD_REF, 'L')
             self.SetAlign(FIELD_VALUE, 'L')
+
+    def PartsList(self):
+        return { self.ref: self.value }
 
 
 # Python really needs a clean class-member form
@@ -239,10 +254,13 @@ class OpAmp(Component):
     def __init__(self, comp, pos, orientation, sim):
         global u_count
         if sim:
-            super(OpAmp, self).__init__("X%s" % u_count, "linear:LM321", pos, orientation)
+            self.ref = "X%s" % u_count
+            self.value = "linear:LM321"
         else:
-            super(OpAmp, self).__init__("U%s" % u_count, "linear:" + comp, pos, orientation)
+            self.ref = "U%s" % u_count
+            self.value = "linear:" + comp
 
+        super(OpAmp, self).__init__(self.ref, sef.value, pos, orientation)
         u_count += 1
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "X")
@@ -266,10 +284,16 @@ class OpAmp(Component):
     def GetPwrM(self):
         return Anchor(self.Position((-100, 300)))
 
+    def PartsList(self):
+        return { self.ref: self.value }
+
         
 class Power(Component):
     def __init__(self, node, pos, orientation):
         super(Power, self).__init__("#PWR?", "power:" + node, pos, orientation)
+
+    def PartsList(self):
+        return None
 
 class Ground(Power):
     def __init__(self, pos):
@@ -315,6 +339,8 @@ class VSource(Component):
     def GetPin2Pos(self):
         return self.Position((0, -300))
 
+    def PartsList(self):
+        return None
 
 class Wire(Relocatable):
     def __init__(self, start, end, kind = 'Wire'):
@@ -453,6 +479,19 @@ class Schematic(object):
 
         return s
 
+    def PartsList(self):
+        parts = { }
+        for item in self.items:
+            itemparts = item.PartsList()
+            if not itemparts is None:
+                parts.update(itemparts)
+
+        if len(parts) == 0:
+            return None
+
+        return parts
+
+
 class SubCircuit(Relocatable):
     def __init__(self, pos):
         super(SubCircuit, self).__init__(pos)
@@ -471,3 +510,15 @@ class SubCircuit(Relocatable):
             s += item.ToString()
 
         return s
+
+    def PartsList(self):
+        parts = { }
+        for item in self.items:
+            itemparts = item.PartsList()
+            if not itemparts is None:
+                parts.update(itemparts)
+
+        if len(parts) == 0:
+            return None
+
+        return parts
