@@ -338,11 +338,6 @@ if __name__ == "__main__":
                    Wire.Connect(corner4, rl),
                    Wire.Connect(corner4, vout))
 
-        # Set default AC analysis to have > 1 decade of freq span past f0
-        fmax = mp.power(10.0, mp.floor(mp.log(f0, 10.0)) + 2)
-
-        schema.Add(Text((3750, 3750), '.ac dec 10 10 %s' % fmax))
-
         # Ideal op amp: gain=1e6 and nothing else: No poles, no offset
         # voltages, no bias voltages or currents, no tempco, no
         # crosstalk, no noise, no... anything.  Unlike a real op amp
@@ -351,6 +346,14 @@ if __name__ == "__main__":
                         ('.subckt IDEAL 1 2 3 4 5\\n'
                          'E1 5 0 1 2 1000000.0\\n'
                          '.ends\\n')))
+
+        # Set default AC analysis to have > 1 decade of freq span past f0
+        fmax = mp.power(10.0, mp.floor(mp.log(f0, 10.0)) + 2)
+        parts = schema.PartsList()
+
+        # Generate analysis
+
+        schema.Add(Text((3750, 3750), '.ac dec 10 10 %s' % fmax))
 
                          
     def do_common(func, args, sim):
@@ -376,8 +379,6 @@ if __name__ == "__main__":
 
             if sim:
                 add_sim_stuffs(schema, f0)
-                #parts = schema.PartsList()
-                #print parts
 
             with open(filename, "w") as file:
                 file.write(schema.ToString())
