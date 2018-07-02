@@ -85,9 +85,9 @@ Feel free to cut it up and rearrange as needed, adding or renaming
 labels as desired.
 
 Note that when a schematic is appended in KiCAD all reference IDs are
-reset, for this reason the filters are generated unannotated.  It
-would just be confusing not to.  When stages are printed during
-generation the components are named according to this reference stage:
+reset, and when annotated will be fit into the existing schematic.
+When stage component value are printed during generation the components
+re named according to this reference stage:
 
 ![alt text](doc/refstage.png "Reference Schematic for Component Values")
 
@@ -121,6 +121,11 @@ To use it:
 5. Run ngspice: ```Tools -> Simulator```
 6. Press the run button
 7. Press the "Add Signals" button and add V(VOUT)
+
+It's important to open the simulation schematic directly via the
+project and not try to append it.  If you append it the reference IDs
+will be reset and any auto-generated simulation scripting (NYI) will
+no longer match the reference IDs.
 
 This is a first stab at it, and higher orders than 4 (more than two stages)
 will push off the sheet.

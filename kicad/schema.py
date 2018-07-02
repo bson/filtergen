@@ -186,43 +186,68 @@ class Passive(Component):
             self.SetAlign(FIELD_VALUE, 'L')
 
 
+# Python really needs a clean class-member form
+r_count = 1
+c_count = 1
+l_count = 1
+d_count = 1
+u_count = 1
+v_count = 1
+
 class Resistor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Resistor, self).__init__("R?", "device:R_Small", value, pos, orientation, "R")
+        global r_count
+        super(Resistor, self).__init__("R%s" % r_count, "device:R_Small", value, pos,
+                                       orientation, "R")
+        r_count += 1
         self.PlaceRefValue(30)
 
 class Capacitor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Capacitor, self).__init__("C?", "device:C_Small", value, pos, orientation,
-                                        "C")
+        global c_count
+        super(Capacitor, self).__init__("C%s" % c_count, "device:C_Small", value, pos,
+                                        orientation, "C")
+        c_count += 1
         self.PlaceRefValue(60)
 
 class Inductor(Passive):
     def __init__(self, value, pos, orientation):
-        super(Inductor, self).__init__("L?", "device:L_Small", value, pos, orientation, "L")
+        global l_count
+        super(Inductor, self).__init__("L%s" % l_count, "device:L_Small", value, pos,
+                                       orientation, "L")
+        l_count += 1
         self.PlaceRefValue(0)
 
 class LED(Passive):
     def __init__(self, value, pos, orientation):
-        super(LED, self).__init__("D?", "device:LED_Small", value, pos, orientation, "D")
+        global d_count
+        super(LED, self).__init__("D%s" % d_count, "device:LED_Small", value, pos,
+                                  orientation, "D")
+        d_count += 1
         self.PlaceRefValue(50)
 
 class Diode(Passive):
     def __init__(self, value, pos, orientation):
-        super(Diode, self).__init__("D?", "device:D_Small", value, pos, orientation, "D")
+        global d_count
+        super(Diode, self).__init__("D%s" % d_count, "device:D_Small", value, pos,
+                                    orientation, "D")
+        d_count += 1
         self.PlaceRefValue(50)
 
 class OpAmp(Component):
     '''Pin1 is the negative input, Pin2 is the output.  GetInP() returns an Anchor for In+.'''
     def __init__(self, comp, pos, orientation, sim):
+        global u_count
         if sim:
-            super(OpAmp, self).__init__("X?", "linear:LM321", pos, orientation)
+            super(OpAmp, self).__init__("X%s" % u_count, "linear:LM321", pos, orientation)
         else:
-            super(OpAmp, self).__init__("U?", "linear:" + comp, pos, orientation)
+            super(OpAmp, self).__init__("U%s" % u_count, "linear:" + comp, pos, orientation)
+
+        u_count += 1
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "X")
         self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", comp)
-        self.SetUserField(FIELD_SPICE_NODES, "Spice_Node_Sequence", "1 3 5 2 4")
+        self.SetUserField(FIELD_SPICE_NODES, "Spice_Node_Sequence", "1 3 5 2 4") # LM321
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
         self.SetValue(comp, (75, 200))
     
@@ -264,7 +289,11 @@ class VSource(Component):
     def __init__(self, pos, value, sim_value):
         '''Value is the displayed value; sim_value is the spice config'''
 
-        super(VSource, self).__init__("V?", "pspice:VSOURCE", pos, VERTICAL)
+        global v_count
+
+        super(VSource, self).__init__("V%s" % v_count, "pspice:VSOURCE", pos, VERTICAL)
+        v_count += 1
+
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "V")
         self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", sim_value)
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
