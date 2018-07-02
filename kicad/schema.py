@@ -52,8 +52,6 @@ class Relocatable(object):
     def ToString(self):
         return ""
 
-    # For simplicity, so everything has this method instead of trying
-    # to augur its existence programmatically...
     def PartsList(self):
         return None
 
@@ -170,7 +168,6 @@ class Passive(Component):
         self.ref = ref
         self.value = value
 
-                      
     def GetPin1Pos(self):
         posx, posy = self.Position()
         return (posx - (self.orientation[1] * type(self).SIZE),
@@ -260,7 +257,7 @@ class OpAmp(Component):
             self.ref = "U%s" % u_count
             self.value = "linear:" + comp
 
-        super(OpAmp, self).__init__(self.ref, sef.value, pos, orientation)
+        super(OpAmp, self).__init__(self.ref, self.value, pos, orientation)
         u_count += 1
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "X")
@@ -291,9 +288,6 @@ class OpAmp(Component):
 class Power(Component):
     def __init__(self, node, pos, orientation):
         super(Power, self).__init__("#PWR?", "power:" + node, pos, orientation)
-
-    def PartsList(self):
-        return None
 
 class Ground(Power):
     def __init__(self, pos):
@@ -338,9 +332,6 @@ class VSource(Component):
 
     def GetPin2Pos(self):
         return self.Position((0, -300))
-
-    def PartsList(self):
-        return None
 
 class Wire(Relocatable):
     def __init__(self, start, end, kind = 'Wire'):

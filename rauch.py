@@ -141,6 +141,9 @@ class Lowpass(Relocatable):
         self.circuit.SetOrigin(self.SheetPosition())
         return self.circuit.ToString()
 
+    def PartsList(self):
+        return self.circuit.PartsList()
+
 
 class Cascade(Relocatable):
     def __init__(self, pos, f, H0, n, R1, q_enumerator, kind, sim):
@@ -208,6 +211,9 @@ class Cascade(Relocatable):
     def ToString(self):
         self.circuit.SetOrigin(self.SheetPosition())
         return self.circuit.ToString()
+
+    def PartsList(self):
+        return self.circuit.PartsList()
 
 
 class ButterworthCascade(Cascade):
@@ -360,7 +366,6 @@ if __name__ == "__main__":
 
             if sim:
                 circuit.SetOrigin((1400, -950))
-                add_sim_stuffs(schema, f0)
             else:
                 height = schema.GetSize()[1]
                 height = height - (height % 100) # Snap to mil grid
@@ -369,12 +374,15 @@ if __name__ == "__main__":
 
             add_in_out(schema, circuit, n)
 
+            if sim:
+                add_sim_stuffs(schema, f0)
+                #parts = schema.PartsList()
+                #print parts
+
             with open(filename, "w") as file:
                 file.write(schema.ToString())
                 print "\nWrote schematic to %s" % filename
 
-        parts = schema.PartsList()
-        print parts
         
     def do_stage(sim, args):
         f, H0, Q, R1 = map(si_val, args[:4])
