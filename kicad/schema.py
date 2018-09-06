@@ -125,6 +125,12 @@ class Component(Relocatable):
         else:
             self.fields[FIELD_REF]['value'] = ref
 
+    def GetRef(self):
+        return self.fields[FIELD_REF]['value']
+
+    def GetValue(self):
+        return self.fields[FIELD_VALUE]['value']
+
     def SetFlag(self, field, flag, flagValue):
         self.fields[field]['flags'][flag] = flagValue
 
@@ -165,8 +171,6 @@ class Passive(Component):
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", spice_prim)
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
-        self.ref = ref
-        self.value = value
 
     def GetPin1Pos(self):
         posx, posy = self.Position()
@@ -195,7 +199,7 @@ class Passive(Component):
             self.SetAlign(FIELD_VALUE, 'L')
 
     def PartsList(self):
-        return { self.ref: self.value }
+        return { self.GetRef(): self.GetValue() }
 
 
 # Python really needs a clean class-member form

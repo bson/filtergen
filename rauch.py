@@ -349,13 +349,66 @@ if __name__ == "__main__":
 
         # Set default AC analysis to have > 1 decade of freq span past f0
         fmax = mp.power(10.0, mp.floor(mp.log(f0, 10.0)) + 2)
-        parts = schema.PartsList()
 
         # Generate analysis
 
-        schema.Add(Text((3750, 3750), '.ac dec 10 10 %s' % fmax))
+        acanalysis = 'ac dec 10 10 %s' % fmax
 
-                         
+        analysis = "." + acanalysis # for KiCAD so it recognizes this as a .AC analysis
+
+        if False:
+            # Should be an option to add MC analysis
+            analysis += mc_analysis(schema.PartsList())
+
+        schema.Add(Text((3750, 7650), analysis))
+
+
+    def mc_analysis(parts):
+        '''Returns a monte-carlo analysis for a list of parts to vary
+        This is currently incompatible with KiCAD - ngspice will run it
+        just fine, but there is no way to visualize the result in the
+        KiCAD simulator tool.  So this is a placeholder.  At some point
+        appending this can be made a command line option (when KiCAD can
+        visualize it).'''
+        
+        result = '''
+.control
+    let mc_runs = 100
+    let run = 1
+    set scratch = $curplot
+    define tolerance(val, pct) (val + val * (pct/100) * sunif(0))
+    dowhile run <= mc_runs
+'''
+        for part in sorted(parts.keys()):
+            val = parts[part]
+            kind = part[:1]
+            if not kind in ["R", "L", "C"]:
+                continue
+
+            # Default tolerance: C=5%, R=2%
+            pct = 2
+            if part[:1] == "C":
+                pct = 5
+
+            if val[-1] == "F":
+                val = val[0:-1]
+
+            result += "        alter %s = tolerance(%s, %s)\n" % (part, val, pct)
+
+        result += '        ' + acanalysis
+
+        result += '''
+        set run = $&run
+        set dt = $curplot
+        setplot $scratch
+        let vout{$run}={$dt}.v(vout)
+        setplot $dt
+        let run = run + 1
+    end
+.endc
+'''
+        return result.replace("\n", "\\n")
+
     def do_common(func, args, sim):
         filename = None
         if len(args) > 4:
