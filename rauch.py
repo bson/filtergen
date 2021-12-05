@@ -46,12 +46,12 @@ class Lowpass(Relocatable):
         self.Build()
 
     def Print(self, ident):
-        print "Rauch LPF Stage (%s)" % ident
-        print "  R1: %sohm" % self.R1
-        print "  R2: %sohm" % self.R2
-        print "  R3: %sohm" % self.R3
-        print "  C1: %s" % self.C1
-        print "  C2: %s" % self.C2
+        print("Rauch LPF Stage (%s)" % ident)
+        print("  R1: %sohm" % self.R1)
+        print("  R2: %sohm" % self.R2)
+        print("  R3: %sohm" % self.R3)
+        print("  C1: %s" % self.C1)
+        print("  C2: %s" % self.C2)
         
     def Build(self):
         '''Build a filter stage subcircuit.'''
@@ -181,7 +181,7 @@ class Cascade(Relocatable):
                 self.input = stage.GetInput()
             else:
                 self.circuit.Add(Wire(outpos, inpos))
-                print
+                print()
 
             stage.Print("#%s, H=%s, Q=%s, f=%sHz" % (i, nsigdig(H, NHDIGITS),
                                                      nsigdig(Q, NQDIGITS),
@@ -237,21 +237,21 @@ if __name__ == "__main__":
     def usage():
         progname = os.path.split(sys.argv[0])[-1]
 
-        print "usage:"
-        print "  %s [sim] stage f0 H0 Q R1 [filename]" % progname
-        print "  %s [sim] butterworth f0 H0 N R1 [filename]" % progname
-        print "  %s [sim] bessel f0 H0 N R1 [filename]" % progname
-        print
-        print "     Generates either a single stage or an N-stage Rauch/MFB low-pass filter"
-        print "     with a specific response.  Calculates component values for a cut-off"
-        print "     frequency (-3dB) of f0 Hz, gain H0."
-        print "     R1 is used to scale resistors, with 1k being a good starting point."
-        print "     If supplied, a KiCAD schmatic is output to 'filename'."
-        print
-        print "     Adding an initial 'sim' argument outputs a KiCAD schematic suitable"
-        print "     for simulation with KiCAD's built-in ngspice support."
-        print
-        print "SI suffixes:", string.join(SUFFIXES, " ")
+        print("usage:")
+        print("  %s [sim] stage f0 H0 Q R1 [filename]" % progname)
+        print("  %s [sim] butterworth f0 H0 N R1 [filename]" % progname)
+        print("  %s [sim] bessel f0 H0 N R1 [filename]" % progname)
+        print()
+        print("     Generates either a single stage or an N-stage Rauch/MFB low-pass filter")
+        print("     with a specific response.  Calculates component values for a cut-off")
+        print("     frequency (-3dB) of f0 Hz, gain H0.")
+        print("     R1 is used to scale resistors, with 1k being a good starting point.")
+        print("     If supplied, a KiCad schmatic is output to 'filename'.")
+        print()
+        print("     Adding an initial 'sim' argument outputs a KiCad schematic suitable")
+        print("     for simulation with KiCad's built-in ngspice support.")
+        print()
+        print("SI suffixes:", " ".join(SUFFIXES))
         exit(1)
 
     def add_in_out(schema, filter, n):
@@ -354,7 +354,7 @@ if __name__ == "__main__":
 
         acanalysis = 'ac dec 10 10 %s' % fmax
 
-        analysis = "." + acanalysis # for KiCAD so it recognizes this as a .AC analysis
+        analysis = "." + acanalysis # for KiCad so it recognizes this as a .AC analysis
 
         if False:
             # Should be an option to add MC analysis
@@ -365,10 +365,10 @@ if __name__ == "__main__":
 
     def mc_analysis(parts):
         '''Returns a monte-carlo analysis for a list of parts to vary
-        This is currently incompatible with KiCAD - ngspice will run it
+        This is currently incompatible with KiCad - ngspice will run it
         just fine, but there is no way to visualize the result in the
-        KiCAD simulator tool.  So this is a placeholder.  At some point
-        appending this can be made a command line option (when KiCAD can
+        KiCad simulator tool.  So this is a placeholder.  At some point
+        appending this can be made a command line option (when KiCad can
         visualize it).'''
         
         result = '''
@@ -435,7 +435,7 @@ if __name__ == "__main__":
 
             with open(filename, "w") as file:
                 file.write(schema.ToString())
-                print "\nWrote schematic to %s" % filename
+                print("\nWrote schematic to %s" % filename)
 
         
     def do_stage(sim, args):
@@ -453,7 +453,7 @@ if __name__ == "__main__":
         f, H0, N, R1 = map(si_val, args[:4])
 
         if N > 32:
-            print "N is too big; you probably didn't mean to do this"
+            print("N is too big; you probably didn't mean to do this")
             exit(1)
 
         return ButterworthCascade((2000, 2000), f, H0, N, R1, sim), N, f
@@ -463,7 +463,7 @@ if __name__ == "__main__":
         f, H0, N, R1 = map(si_val, args[:4])
 
         if N > 32:
-            print "N is too big; you probably didn't mean to do this"
+            print("N is too big; you probably didn't mean to do this")
             exit(1)
 
         return BesselCascade((2000, 2000), f, H0, N, R1, sim), N, f

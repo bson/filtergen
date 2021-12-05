@@ -64,7 +64,7 @@ class Component(Relocatable):
         counter = counter + 1
         self.reference   = ref
         self.component   = comp
-        self.uid         = "%08X" % (time.time()+counter)
+        self.uid         = "%08X" % ((int)(time.time()+counter))
         self.fields      = { 0: self.newField(ref, (0, 0), orientation) }
         self.orientation = orientation
 
@@ -90,7 +90,7 @@ class Component(Relocatable):
                                                      self.uid,
                                                      "%s %s" % pos)
 
-        for n in xrange(0,4):
+        for n in range(0,4):
             if not n in self.fields:
                 self.fields[n] = self.newField("", (0,0), self.orientation)
 

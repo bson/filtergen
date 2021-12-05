@@ -45,7 +45,7 @@ def bessel(n):
     n = int(n)
 
     if n > 8:
-        print "Max cascade length for Bessel filters is 8"
+        print("Max cascade length for Bessel filters is 8")
         exit(1)
 
     # Return with smallest Q in the first stage

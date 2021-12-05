@@ -1,7 +1,7 @@
-# KiCAD Schematic Filter Generator
+# KiCad Schematic Filter Generator
 
 This is a fairly simple filter generator that not only calculates
-cascades but can also output KiCAD schematics.  I created this because
+cascades but can also output KiCad schematics.  I created this because
 capturing and then populating components values in a schematic is
 rather tedious - and error prone.
 
@@ -30,10 +30,10 @@ usage:
      with a specific response.  Calculates component values for a cut-off
      frequency (-3dB) of f0 Hz, gain H0.
      R1 is used to scale resistors, with 1k being a good starting point.
-     If supplied, a KiCAD schmatic is output to 'filename'.
+     If supplied, a KiCad schmatic is output to 'filename'.
 
      Adding an initial 'sim' argument outputs a KiCAD schematic suitable
-     for simulation with KiCAD's built-in ngspice support.
+     for simulation with KiCad's built-in ngspice support.
 
 SI suffixes: M k  m u n p
 ```
@@ -72,19 +72,19 @@ stage is always second order, hence the filter order is always twice
 that of N supplied.  It doesn't generate odd-order filters.  It also
 doesn't know how to add passive stages as of now.
 
-The filter generated can be added to KiCAD via File -> Append
+The filter generated can be added to KiCad via File -> Append
 Schematic Sheet...; the schematic has a token A4 page, with the filter
 below it.  It's placed outside the page to make it easy to move it in
 whole or pieces onto the sheet as desired.  The op amps will be LM358;
 this is just a placeholder and is intended to be edited to suit.
 
-![alt text](doc/sample_cascade.png "Sample KiCAD Schematic")
+![alt text](doc/sample_cascade.png "Sample KiCad Schematic")
 
 If you don't want the stage boxes (line notes) or text notes, just remove them.
 Feel free to cut it up and rearrange as needed, adding or renaming
 labels as desired.
 
-Note that when a schematic is appended in KiCAD all reference IDs are
+Note that when a schematic is appended in KiCad all reference IDs are
 reset, and when annotated will be fit into the existing schematic.
 When stage component value are printed during generation the components
 re named according to this reference stage:
@@ -104,7 +104,7 @@ a .SCH file.
 # Simulation
 
 Adding the keyword parameter "sim" makes the script output a .SCH file
-with KiCAD v5 ngspice simulation fixings.  The op amps will use an ideal
+with KiCad v5 ngspice simulation fixings.  The op amps will use an ideal
 model (1M gain, no poles or anything else, just flat response to infinity),
 an input source, and a .ac analysis directive.  It also adds some other
 token components such as source and load resistors and rail voltage sources.
@@ -114,7 +114,7 @@ which is a common single op amp.  It also identifies the opamps as X? since
 this is what ngspice expects for a subckt model.
 
 To use it:
-1. Create an empty KiCAD project and close it
+1. Create an empty KiCad project and close it
 2. Output a filter .sch file into the project
 3. Open the project
 4. Open the schematic
@@ -132,12 +132,12 @@ will push off the sheet.
 
 The main purpose is to find reasonable E series component values.
 I'll add a Monte Carlo analysis out of the box at some point.  This would
-be made easier if KiCAD could pick up plot instructions from the schematic.
+be made easier if KiCad could pick up plot instructions from the schematic.
 
 # Notes
 
 The grid positions are snapped to 100mil.  This means if you use a
-metric grid size you may run into alignment problems.  KiCAD
+metric grid size you may run into alignment problems.  KiCad
 unfortunately can make these a pain to fix.  I'll add a grid
 parameter at some point.
 
