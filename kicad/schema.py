@@ -213,7 +213,7 @@ v_count = 1
 class Resistor(Passive):
     def __init__(self, value, pos, orientation):
         global r_count
-        super(Resistor, self).__init__("R%s" % r_count, "device:R_Small", value, pos,
+        super(Resistor, self).__init__("R%s" % r_count, "Device:R_Small", value, pos,
                                        orientation, "R")
         r_count += 1
         self.PlaceRefValue(30)
@@ -221,7 +221,7 @@ class Resistor(Passive):
 class Capacitor(Passive):
     def __init__(self, value, pos, orientation):
         global c_count
-        super(Capacitor, self).__init__("C%s" % c_count, "device:C_Small", value, pos,
+        super(Capacitor, self).__init__("C%s" % c_count, "Device:C_Small", value, pos,
                                         orientation, "C")
         c_count += 1
         self.PlaceRefValue(60)
@@ -229,7 +229,7 @@ class Capacitor(Passive):
 class Inductor(Passive):
     def __init__(self, value, pos, orientation):
         global l_count
-        super(Inductor, self).__init__("L%s" % l_count, "device:L_Small", value, pos,
+        super(Inductor, self).__init__("L%s" % l_count, "Device:L_Small", value, pos,
                                        orientation, "L")
         l_count += 1
         self.PlaceRefValue(0)
@@ -237,7 +237,7 @@ class Inductor(Passive):
 class LED(Passive):
     def __init__(self, value, pos, orientation):
         global d_count
-        super(LED, self).__init__("D%s" % d_count, "device:LED_Small", value, pos,
+        super(LED, self).__init__("D%s" % d_count, "Device:LED_Small", value, pos,
                                   orientation, "D")
         d_count += 1
         self.PlaceRefValue(50)
@@ -245,7 +245,7 @@ class LED(Passive):
 class Diode(Passive):
     def __init__(self, value, pos, orientation):
         global d_count
-        super(Diode, self).__init__("D%s" % d_count, "device:D_Small", value, pos,
+        super(Diode, self).__init__("D%s" % d_count, "Device:D_Small", value, pos,
                                     orientation, "D")
         d_count += 1
         self.PlaceRefValue(50)
@@ -256,10 +256,10 @@ class OpAmp(Component):
         global u_count
         if sim:
             self.ref = "X%s" % u_count
-            self.value = "linear:LM321"
+            self.value = "Amplifier_Operational:LM321"
         else:
             self.ref = "U%s" % u_count
-            self.value = "linear:" + comp
+            self.value = "Amplifier_Operational:" + comp
 
         super(OpAmp, self).__init__(self.ref, self.value, pos, orientation)
         u_count += 1
@@ -462,15 +462,14 @@ class Schematic(object):
         self.items.extend(args)
 
     def ToString(self):
-        s = "EESchema Schematic File Version 4\nEELAYER 26 0\nEELAYER END\n$Descr %s" % \
-                     self.size_name
-        s += " %s %s\n" % self.size
-        s += "encoding utf-8\nSheet 1 1\nTitle \"\"\nDate \"\"\nRev \"\"\nComp \"\"\nComment1 \"\"\nComment2 \"\"\nComment3 \"\"\nComment4 \"\"\n$EndDescr\n"
+        s = "(kicad_sch (version 20210621) (generator github.com:bson/filtergen)\n"
+        s += "  (paper %s)\n" % self.size_name
+        s += "  (title_block\n)"
 
         for item in self.items:
             s += item.ToString()
 
-        s += "$EndSCHEMATC\n"
+        s += ")\n"
 
         return s
 
