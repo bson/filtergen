@@ -1,5 +1,17 @@
 # KiCad Schematic Filter Generator
 
+*NOTE*: this generator produces old legacy file formats, but current
+KiCad (as of v9.0.2) can import and convert this to a current project.
+I've included a dummy project file in `dummy.pro` that allows easily
+creating one.  Then the schematic in that dummy project can be
+imported or simulated.  Just copy the `dummy.pro` project and the
+schematic `.sch` file into a folder.  Open this dummy project in
+kicad, open the schematic editor, click past the missing cache
+warning, and save it.  This creates a `.kicad_sch` file which can then
+be simulated or imported to another project.
+
+Back to the description...
+
 This is a fairly simple filter generator that not only calculates
 cascades but can also output KiCad schematics.  I created this because
 capturing and then populating components values in a schematic is
