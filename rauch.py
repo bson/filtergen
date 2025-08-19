@@ -39,7 +39,7 @@ class Lowpass(Relocatable):
         self.f  = "%sHz" % sisuffix(f)
 
         if self.sim:
-            self.OPAMP = "IDEAL"
+            self.OPAMP = "${SIM.PARAMS}"
         else:
             self.OPAMP = "LM358" # Just a dummy value
 
@@ -96,23 +96,28 @@ class Lowpass(Relocatable):
                   Wire.Connect(corner1, r1),
                   Wire.Connect(conn3, c2))
 
-        opamp = OpAmp(self.OPAMP, (2450, 900), VERTICAL, sim)
+        opamp = OpAmp(self.OPAMP, (2450, 1000), VERTICAL, sim)
 
-        corner2 = Connection((3050, 900))
+        corner2 = Connection((3050, 1000))
         corner3 = Corner((3050, 300))
         corner4 = Corner((3050, 1000))
 
+        inp_corner = Corner((1950, 1100))
+        inp_corner2 = Corner((1950,1000))
+
         stage.Add(opamp, corner2, corner3,
-                  Wire.Connect(conn2, opamp),
+                  Wire.Connect(conn2, inp_corner2),
+                  Wire.Connect(inp_corner2, inp_corner),
+                  Wire.Connect(inp_corner, opamp),
                   Wire.Connect(opamp, corner2),
                   Wire.Connect(corner2, corner3),
                   Wire.Connect(corner3, conn3),
                   Wire.Connect(corner2, corner4))
 
-        corner5 = Corner((1950, 800))
-        gnd2    = Ground((1950, 1200))
-        pwr1    = Supply("VDD", (2350, 500), VERTICAL)
-        pwr2    = Supply("VSS", (2350, 1300), VERTICAL_FLIP)
+        corner5 = Corner((2050, 900))
+        gnd2    = Ground((2050, 1400))
+        pwr1    = Supply("VDD", (2350, 600), VERTICAL)
+        pwr2    = Supply("VSS", (2350, 1400), VERTICAL_FLIP)
 
         stage.Add(corner5, gnd2,
                   Wire.Connect(gnd2, corner5),
@@ -278,12 +283,12 @@ if __name__ == "__main__":
     def add_sim_stuffs(schema, f0):
         '''Adds simulation bits: VSS, VDD supplies, a source, a 100k load, etc.'''
 
-        v1      = VSource((1300, 3500), "15V", "dc 15")
-        v2      = VSource((1300, 4300), "15V", "dc 15")
+        v1      = VSource((1300, 3600), "15V", "dc 15", "1=+ 2=-", "DC", "V", "VDC", "")
+        v2      = VSource((1300, 4200), "15V", "dc 15", "1=+ 2=-", "DC", "V", "VDC", "")
         conn1   = Connection((1300, 3900))
         gnd1    = Ground((1900, 4000))
-        vdd     = Supply("VDD", (1300, 3000), VERTICAL)
-        vss     = Supply("VSS", (1300, 4800), VERTICAL_FLIP)
+        vdd     = Supply("VDD", (1300, 3300), VERTICAL)
+        vss     = Supply("VSS", (1300, 4500), VERTICAL_FLIP)
         corner1 = Corner((1900,3900))
 
         schema.Add(v1, v2, conn1, gnd1, vdd, vss, corner1,
@@ -295,8 +300,8 @@ if __name__ == "__main__":
                    Wire.Connect(corner1, gnd1))
 
         # Set the source frequency to f0/2
-        v3      = VSource((1300, 1700), "2Vpp AC",
-                          "dc 0 ac 1 0 sin(0 1 %s 0 0)" % sisuffix(f0/2.0))
+        v3val = "dc=0 ampl=1 phase=0 f=%s td=0 theta=0 ac=1 ph=0" % sisuffix(f0/2.0)
+        v3      = VSource((1300, 1600), "2Vpp AC", v3val, "1=+ 2=-", "SIN", "V", "VSIN", v3val)
 
         # Make the spice directive ('model') show
         v3.SetFlag(FIELD_SPICE_MODEL, FLAG_HIDDEN, '0')
@@ -305,27 +310,13 @@ if __name__ == "__main__":
         rs      = Resistor("0", (1600, 1250), HORIZONTAL)
         rs.SetRef("R100")
         vin     = GlobalLabel((1900, 1250), "VIN", "Output", 2)
-        gnd2    = Ground((1300, 2200))
+        gnd2    = Ground((1300, 1900))
 
         schema.Add(v3, rs, vin, gnd2, corner5,
                    Wire.Connect(gnd2, v3),
                    Wire.Connect(v3, corner5),
                    Wire.Connect(corner5, rs),
                    Wire.Connect(rs, vin))
-
-        gnd3    = Ground((1700, 2900))
-        zero    = Component("#GND?", "pspice:0", (1900, 2950), VERTICAL)  # Node 0
-        zero.SetFlag(FIELD_REF, FLAG_HIDDEN, "1")
-        zero.SetValue("0", (0,-100))
-        zero.SetFlag(FIELD_VALUE, FLAG_HIDDEN, "0")
-
-        corner2 = Corner((1700, 2800))
-        corner3 = Corner((1900, 2800))
-
-        schema.Add(gnd3, zero, corner2, corner3,
-                   Wire.Connect(gnd3, corner2),
-                   Wire.Connect(corner2, corner3),
-                   Wire.Connect(corner3, zero))
 
         vout    = GlobalLabel((1900, 4700), "VOUT", "Input")
         corner4 = Corner((2050, 4700))
@@ -338,29 +329,14 @@ if __name__ == "__main__":
                    Wire.Connect(corner4, rl),
                    Wire.Connect(corner4, vout))
 
-        # Ideal op amp: gain=1e6 and nothing else: No poles, no offset
-        # voltages, no bias voltages or currents, no tempco, no
-        # crosstalk, no noise, no... anything.  Unlike a real op amp
-        # this one is relative to node 0.
-        schema.Add(Text((900, 7250),
-                        ('.subckt IDEAL 1 2 3 4 5\\n'
-                         'E1 5 0 1 2 1000000.0\\n'
-                         '.ends\\n')))
-
         # Set default AC analysis to have > 1 decade of freq span past f0
         fmax = mp.power(10.0, mp.floor(mp.log(f0, 10.0)) + 2)
 
-        # Generate analysis
-
-        acanalysis = 'ac dec 10 10 %s' % fmax
-
-        analysis = "." + acanalysis # for KiCad so it recognizes this as a .AC analysis
-
         if False:
-            # Should be an option to add MC analysis
+            # Requires running outside of KiCad
+            analysis = '.ac dec 10 10 %s' % fmax
             analysis += mc_analysis(schema.PartsList())
-
-        schema.Add(Text((3750, 7650), analysis))
+            schema.Add(Text((3750, 7650), analysis))
 
 
     def mc_analysis(parts):

@@ -22,6 +22,8 @@ will also load into v4.
 
 It currently only knows of Multiple-Feedback (MFB) low-pass filters.
 These are sometimes referred to as Rauch filters in the literature.
+Note that it consists of inverting stages, so an odd number of stages
+will result in an inverting filter.
 
 It can generate a single-stage second order filter for an arbitrary
 gain, corner frequency, and Q.
@@ -53,7 +55,7 @@ SI suffixes: M k  m u n p
 At the bottom are the SI suffixes it's aware of. 
 
 ```
-$ python ./rauch.py bessel 25k 10 3 1k ~/Desktop/filter.sch
+$ python ./rauch.py bessel 25k 10 3 1k ~/Desktop/filtertest/filter.sch
 Rauch LPF Stage (#1, Q=1.0233)
   R1: 1000ohm
   R2: 317ohm
@@ -75,7 +77,7 @@ Rauch LPF Stage (#3, Q=0.5103)
   C1: 22.0nF
   C2: 6.72nF
 
-Wrote schematic to /Users/bson/Desktop/filter.sch
+Wrote schematic to /Users/bson/Desktop/filtertest/filter.sch
 $
 ```
 

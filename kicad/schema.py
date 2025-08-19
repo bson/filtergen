@@ -22,6 +22,12 @@ FIELD_SPICE_NETLIST = 6
 FIELD_SPICE_LIBFILE = 7
 FIELD_SPICE_NODES = 8
 
+FIELD_SPICE_SIM_PINS = 9
+FIELD_SPICE_SIM_TYPE = 10
+FIELD_SPICE_SIM_DEVICE = 11
+FIELD_SPICE_SIM_PARAMS = 12
+FIELD_SPICE_SIM_LIBRARY = 13
+FIELD_SPICE_SIM_NAME = 14
 
 class Relocatable(object):
     def __init__(self, pos):
@@ -254,20 +260,22 @@ class OpAmp(Component):
     '''Pin1 is the negative input, Pin2 is the output.  GetInP() returns an Anchor for In+.'''
     def __init__(self, comp, pos, orientation, sim):
         global u_count
+        self.ref = "U%s" % u_count
         if sim:
-            self.ref = "X%s" % u_count
-            self.value = "Amplifier_Operational:LM321"
+            self.value = "Simulation_SPICE:OPAMP"
         else:
-            self.ref = "U%s" % u_count
             self.value = "Amplifier_Operational:" + comp
 
         super(OpAmp, self).__init__(self.ref, self.value, pos, orientation)
         u_count += 1
 
-        self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "X")
-        self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", comp)
-        self.SetUserField(FIELD_SPICE_NODES, "Spice_Node_Sequence", "1 3 5 2 4") # LM321
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+        self.SetUserField(FIELD_SPICE_SIM_PINS, "Sim.Pins", "1=in+ 2=in- 3=vcc 4=vee 5=out")
+        self.SetUserField(FIELD_SPICE_SIM_DEVICE, "Sim.Device", "SUBCKT")
+        self.SetUserField(FIELD_SPICE_SIM_LIBRARY, "Sim.Library", 
+                          "${KICAD9_SYMBOL_DIR}/Simulation_SPICE.sp")
+        self.SetUserField(FIELD_SPICE_SIM_NAME, "Sim.Name", "kicad_builtin_opamp")
+
         self.SetValue(comp, (75, 200))
     
     def GetInP(self):
@@ -308,17 +316,22 @@ class Supply(Power):
 class VSource(Component):
     '''A voltage source, mainly for simulation purposes.'''
 
-    def __init__(self, pos, value, sim_value):
+    def __init__(self, pos, value, sim_value, sim_pins, sim_type, sim_device, sim_sym, sim_params):
         '''Value is the displayed value; sim_value is the spice config'''
 
         global v_count
 
-        super(VSource, self).__init__("V%s" % v_count, "pspice:VSOURCE", pos, VERTICAL)
+        super(VSource, self).__init__("V%s" % v_count, "Simulation_SPICE:" + sim_sym, pos, VERTICAL)
         v_count += 1
 
         self.SetUserField(FIELD_SPICE_PRIMITIVE, "Spice_Primitive", "V")
         self.SetUserField(FIELD_SPICE_MODEL, "Spice_Model", sim_value)
         self.SetUserField(FIELD_SPICE_NETLIST, "Spice_Netlist_Enabled", "Y")
+        self.SetUserField(FIELD_SPICE_SIM_PINS, "Sim.Pins", sim_pins)
+        self.SetUserField(FIELD_SPICE_SIM_TYPE, "Sim.Type", sim_type)
+        self.SetUserField(FIELD_SPICE_SIM_DEVICE, "Sim.Device", sim_device)
+        self.SetUserField(FIELD_SPICE_SIM_PARAMS, "Sim.Params", sim_params)
+        
         self.SetValue(value, (75, 200))
 
         self.PlaceField(FIELD_REF, (250, 50))
@@ -332,10 +345,10 @@ class VSource(Component):
         self.SetAlign(FIELD_SPICE_MODEL, 'L')
 
     def GetPin1Pos(self):
-        return self.Position((0, 300))
+        return self.Position((0, 200))
 
     def GetPin2Pos(self):
-        return self.Position((0, -300))
+        return self.Position((0, -200))
 
 class Wire(Relocatable):
     def __init__(self, start, end, kind = 'Wire'):
